@@ -1,0 +1,10 @@
+{
+  "name": "House Warming Ceremony - ZAIMS PALACE",
+  "short_name": "ZAIMS PALACE",
+  "description": "House Warming Ceremony Invitation of Abdul Samad & Mufeeda Abdul Samad",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#F8F6F2",
+  "theme_color": "#0B5D4B",
+  "icons": []
+}
