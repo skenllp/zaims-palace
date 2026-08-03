@@ -1,181 +1,33 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // ==========================================
-    // 0. SCRATCH TO OPEN INVITE
+    // 0. OPENING DOORS — tap to reveal invitation
     // ==========================================
-    const scratchCanvas = document.getElementById("scratchCanvas");
-    const scratchScreen = document.getElementById("scratchScreen");
+    const opening = document.getElementById('opening');
     const bgAudio = document.getElementById('bg-audio');
     const audioToggle = document.getElementById('audio-toggle');
     const audioIcon = document.getElementById('audio-icon');
 
-    if (scratchCanvas && scratchScreen) {
-        const ctx = scratchCanvas.getContext("2d");
-        let isDrawing = false;
-        let isFinished = false;
+    if (opening) {
+        document.body.style.overflow = 'hidden';
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-        function resizeCanvas() {
-            if (isFinished) return;
-            const rect = scratchCanvas.parentNode.getBoundingClientRect();
-            scratchCanvas.width = rect.width;
-            scratchCanvas.height = rect.height;
-            drawGoldFoil();
-        }
+        function finishOpening() {
+            document.body.style.overflow = '';
+            opening.classList.add('is-done');
+            opening.remove();
 
-        // Draw Gold Foil Texture programmatically (Emerald + Gold luxury theme)
-        function drawGoldFoil() {
-            const w = scratchCanvas.width;
-            const h = scratchCanvas.height;
-
-            const grad = ctx.createLinearGradient(0, 0, w, h);
-            grad.addColorStop(0, '#D4AF37');
-            grad.addColorStop(0.25, '#f5e6a8');
-            grad.addColorStop(0.5, '#0B5D4B');
-            grad.addColorStop(0.75, '#f5e6a8');
-            grad.addColorStop(1, '#a8842a');
-
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, w, h);
-
-            const imgData = ctx.getImageData(0, 0, w, h);
-            const data = imgData.data;
-            for (let i = 0; i < data.length; i += 4) {
-                const noise = (Math.random() - 0.5) * 22;
-                data[i] = Math.min(255, Math.max(0, data[i] + noise));
-                data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + noise));
-                data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + noise));
+            if (window.gsap) {
+                gsap.from(".hero", { scale: 1.05, opacity: 0, duration: 1.2, ease: "power3.out" });
+                gsap.from(".hero-content > *", { y: 60, opacity: 0, stagger: 0.15, duration: 1, ease: "power3.out" });
             }
-            ctx.putImageData(imgData, 0, 0);
-
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
-            ctx.lineWidth = 1;
-            const gridSize = 45;
-            ctx.beginPath();
-            for (let x = 0; x < w; x += gridSize) {
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, h);
-            }
-            for (let y = 0; y < h; y += gridSize) {
-                ctx.moveTo(0, y);
-                ctx.lineTo(w, y);
-            }
-            ctx.stroke();
-
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
-            ctx.lineWidth = 8;
-            ctx.strokeRect(15, 15, w - 30, h - 30);
-
-            ctx.strokeStyle = 'rgba(11, 93, 75, 0.35)';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(24, 24, w - 48, h - 48);
-
-            ctx.fillStyle = '#0B5D4B';
-            ctx.font = '600 15px "Montserrat", sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
-            ctx.lineWidth = 4;
-            ctx.strokeText('Scratch to Reveal Invitation', w / 2, h / 2);
-            ctx.fillText('Scratch to Reveal Invitation', w / 2, h / 2);
         }
 
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
-
-        ctx.globalCompositeOperation = "destination-out";
-
-        let autoRevealStarted = false;
-        let isChecking = false;
-
-        function getMousePos(e) {
-            const rect = scratchCanvas.getBoundingClientRect();
-            if (e.touches && e.touches[0]) {
-                return {
-                    x: e.touches[0].clientX - rect.left,
-                    y: e.touches[0].clientY - rect.top
-                };
-            }
-            return {
-                x: e.clientX - rect.left,
-                y: e.clientY - rect.top
-            };
-        }
-
-        function scratch(x, y) {
-            if (autoRevealStarted) return;
-            ctx.beginPath();
-            ctx.arc(x, y, 35, 0, Math.PI * 2);
-            ctx.fill();
-            checkReveal();
-        }
-
-        function checkReveal() {
-            if (autoRevealStarted) return;
-            if (isChecking) return;
-            isChecking = true;
-
-            setTimeout(() => {
-                isChecking = false;
-                if (autoRevealStarted) return;
-
-                const w = scratchCanvas.width;
-                const h = scratchCanvas.height;
-                const imgData = ctx.getImageData(0, 0, w, h);
-                const pixels = imgData.data;
-                let transparent = 0;
-
-                const step = 24;
-                let totalChecked = 0;
-                for (let i = 3; i < pixels.length; i += 4 * step) {
-                    totalChecked++;
-                    if (pixels[i] === 0) {
-                        transparent++;
-                    }
-                }
-
-                const percent = transparent / totalChecked;
-
-                if (percent >= 0.22) {
-                    revealInvitation();
-                }
-            }, 80);
-        }
-
-        scratchCanvas.addEventListener("mousedown", (e) => {
-            isDrawing = true;
-            const pos = getMousePos(e);
-            scratch(pos.x, pos.y);
-        });
-
-        scratchCanvas.addEventListener("mousemove", (e) => {
-            if (!isDrawing) return;
-            e.preventDefault();
-            const pos = getMousePos(e);
-            scratch(pos.x, pos.y);
-        });
-
-        window.addEventListener("mouseup", () => { isDrawing = false; });
-
-        scratchCanvas.addEventListener("touchstart", (e) => {
-            isDrawing = true;
-            const pos = getMousePos(e);
-            scratch(pos.x, pos.y);
-        }, { passive: false });
-
-        scratchCanvas.addEventListener("touchmove", (e) => {
-            if (!isDrawing) return;
-            e.preventDefault();
-            const pos = getMousePos(e);
-            scratch(pos.x, pos.y);
-        }, { passive: false });
-
-        window.addEventListener("touchend", () => { isDrawing = false; });
-
-        function revealInvitation() {
-            if (autoRevealStarted) return;
-            autoRevealStarted = true;
-            isFinished = true;
+        function openDoors() {
+            if (opening.classList.contains('is-open')) return;
+            opening.classList.add('is-open');
+            opening.removeEventListener('click', openDoors);
+            opening.removeEventListener('keydown', onOpeningKey);
 
             // Auto-play music after this first interaction (satisfies autoplay policy)
             if (bgAudio) {
@@ -191,31 +43,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
             }
 
-            if (window.gsap) {
-                gsap.to("#scratchCanvas", {
-                    opacity: 0,
-                    duration: 0.6,
-                    ease: "power2.out",
-                    onComplete() {
-                        gsap.to("#scratchScreen", {
-                            opacity: 0,
-                            duration: 0.6,
-                            ease: "power2.out",
-                            onComplete() {
-                                scratchScreen.remove();
-                            }
-                        });
-                    }
-                });
-
-                gsap.from(".hero", { scale: 1.05, opacity: 0, duration: 1.2, ease: "power3.out" });
-                gsap.from(".hero-content > *", { y: 60, opacity: 0, stagger: 0.15, duration: 1, ease: "power3.out" });
-            } else {
-                scratchScreen.style.transition = 'opacity 0.6s ease';
-                scratchScreen.style.opacity = '0';
-                setTimeout(() => scratchScreen.remove(), 600);
-            }
+            window.setTimeout(finishOpening, prefersReducedMotion ? 0 : 1150);
         }
+
+        function onOpeningKey(e) {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDoors(); }
+        }
+
+        opening.addEventListener('click', openDoors);
+        opening.addEventListener('keydown', onOpeningKey);
     }
 
     // ==========================================
@@ -315,7 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Fallback: start music on first general interaction if scratch card is absent / already skipped
+    // Fallback: start music on first general interaction if opening overlay is absent / already skipped
     let musicStarted = false;
     function tryStartMusicOnce() {
         if (musicStarted || !bgAudio) return;
